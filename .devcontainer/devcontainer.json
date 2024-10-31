@@ -1,0 +1,25 @@
+{
+  "name": "integration-test",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "devcontainer",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "capAdd": ["SYS_PTRACE"],
+  "hostRequirements": {
+    "memory": "4gb"
+  },
+  "initializeCommand": "${localWorkspaceFolder}/.devcontainer/gitconfig.sh",
+  "postCreateCommand": "go version",
+  "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
+  "customizations": {
+    "jetbrains": {
+      "backend": "GoLand",
+      "plugins": [
+        "com.github.intellij.ginkgo",
+        "com.intellij.bigdatatools.core",
+        "com.intellij.bigdatatools.kafka",
+        "com.intellij.ml.llm"
+      ]
+    }
+  }
+}
+

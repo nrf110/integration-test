@@ -1,0 +1,40 @@
+services:
+  devcontainer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../..:/workspaces:cached
+      - client-certs:/certs/client
+    command: sleep infinity
+    environment:
+      DOCKER_HOST: tcp://docker:2376
+      DOCKER_TLS_VERIFY: 1
+      DOCKER_TLS_CERT_DIR: /certs
+      DOCKER_CERT_PATH: /certs/client
+    env_file:
+      - git.env
+    networks:
+      - test
+    depends_on:
+      - docker
+
+  docker:
+    image: docker:dind
+    container_name: docker
+    privileged: true
+    volumes:
+      - client-certs:/certs/client
+      - ca-certs:/certs/ca
+    networks:
+      - test
+
+volumes:
+  ca-certs:
+  client-certs:
+
+networks:
+  test:
+    name: test
+    driver: bridge
+

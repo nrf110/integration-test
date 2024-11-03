@@ -37,4 +37,3 @@ networks:
   test:
     name: test
     driver: bridge
-

@@ -2,14 +2,14 @@ package integrationtest
 
 import (
 	"context"
+	"github.com/nrf110/integration-test/pkg/kafka"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/kafka"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"strings"
 )
 
-const defaultKafkaImage = "confluentinc/confluent-local:7.5.0"
+const defaultKafkaImage = "apache/kafka-native:3.8.0"
 
 type KafkaDependency struct {
 	Dependency
@@ -92,27 +92,34 @@ func (k *KafkaDependency) Start(ctx context.Context) error {
 	clientOpts := append([]kgo.Opt{
 		kgo.SeedBrokers(seeds...),
 	}, k.clientOpts...)
+	//adminClient, err := kgo.NewClient(clientOpts...)
+	//k.adminClient = kadm.NewClient(adminClient)
+	//for _, topic := range k.topics {
+	//	var r kadm.CreateTopicResponse
+	//	r, err = k.adminClient.CreateTopic(
+	//		ctx,
+	//		topic.partitions,
+	//		1,
+	//		topic.properties,
+	//		topic.name,
+	//	)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	if r.Err != nil {
+	//		return r.Err
+	//	}
+	//}
 
-	client, err := kgo.NewClient(clientOpts...)
-
-	k.adminClient = kadm.NewClient(client)
-
-	k.client = client
 	k.env = map[string]string{
 		"KAFKA_BROKERS": strings.Join(seeds, ","),
 	}
 
-	for _, topic := range k.topics {
-		if _, err = k.adminClient.CreateTopics(
-			ctx,
-			topic.partitions,
-			1,
-			topic.properties,
-			topic.name,
-		); err != nil {
-			return err
-		}
+	client, err := kgo.NewClient(clientOpts...)
+	if err != nil {
+		return err
 	}
+	k.client = client
 
 	return nil
 }

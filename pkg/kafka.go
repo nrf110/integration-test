@@ -144,23 +144,6 @@ func (k *KafkaDependency) Produce(ctx context.Context, records ...*kgo.Record) e
 	return results.FirstErr()
 }
 
-func (k *KafkaDependency) ConsumeWhile(ctx context.Context, predicate func(int, *kgo.Record) (bool, error)) error {
-	var (
-		more bool
-		err  error
-	)
-
-	for more {
-		fetches := k.client.PollFetches(ctx)
-		if errs := fetches.Errors(); len(errs) > 0 {
-			return errs[0].Err
-		}
-
-		for idx, record := range fetches.Records() {
-			if more, err = predicate(idx, record); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
+func (k *KafkaDependency) Consume(ctx context.Context, maxRecords int) []*kgo.Record {
+	return k.client.PollRecords(ctx, maxRecords).Records()
 }

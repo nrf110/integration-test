@@ -30,8 +30,8 @@ var _ = Describe("KafkaDependency", func() {
 			Value: []byte("Goodbye"),
 		})).To(BeNil())
 
-		//kafka.ConsumeWhile(ctx, func(_ int, record *kgo.Record) (bool, error) {
-		//	return string(record.Key) == "Hello", nil
-		//})
+		records := kafka.Consume(ctx, 1)
+		Expect(records).To(HaveLen(1))
+		Expect(string(records[0].Key)).To(Equal("Hello"))
 	})
 })

@@ -1,7 +1,9 @@
 {
   "name": "integration-test",
-  "dockerComposeFile": "docker-compose.yml",
-  "service": "devcontainer",
+  "dockerFile": "Dockerfile",
+  "features": {
+    
+  },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "capAdd": ["SYS_PTRACE"],
   "hostRequirements": {

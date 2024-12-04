@@ -1,21 +1,25 @@
 package integrationtest_test
 
 import (
+	"github.com/jackc/pgx/v5"
+	integrationtest "github.com/nrf110/integration-test/pkg"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	container "github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
 var _ = Describe("PostgresDependency", func() {
 	It("connect", func(ctx SpecContext) {
-		c, err := container.Run(ctx, "postgres:16",
-			container.WithDatabase("postgres"),
-			container.WithUsername("postgres"),
-			container.WithPassword("postgres"),
-			container.WithSQLDriver("pgx"))
+		pg := integrationtest.NewPostgresDependency(&integrationtest.PostgresConfig{
+			Database: "postgres",
+			User:     "postgres",
+			Password: "postgres",
+		})
+		err := pg.Start(ctx)
 		Expect(err).To(BeNil())
 		defer func() {
-			c.Terminate(ctx)
+			pg.Stop(ctx)
 		}()
+		conn := pg.Client().(*pgx.Conn)
+		Expect(conn.Ping(ctx)).To(BeNil())
 	})
 })

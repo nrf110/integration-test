@@ -3,7 +3,9 @@ package integrationtest
 import (
 	"context"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"strconv"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	container "github.com/testcontainers/testcontainers-go/modules/postgres"
@@ -58,6 +60,10 @@ func (pg *PostgresDependency) Start(ctx context.Context) error {
 		container.WithDatabase(pg.config.Database),
 		container.WithUsername(pg.config.User),
 		container.WithPassword(pg.config.Password),
+		testcontainers.WithWaitStrategy(
+			wait.ForLog("database system is ready to accept connections").
+				WithOccurrence(2).
+				WithStartupTimeout(5*time.Second)),
 		container.WithSQLDriver("pgx"))
 
 	if err != nil {

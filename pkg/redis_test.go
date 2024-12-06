@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/redis/go-redis/v9"
-	"time"
 )
 
 var _ = Describe("RedisDependency", func() {
@@ -15,8 +14,6 @@ var _ = Describe("RedisDependency", func() {
 		defer func() {
 			r.Stop(ctx)
 		}()
-
-		time.Sleep(5 * time.Second)
 
 		client := r.Client().(*redis.Client)
 		status := client.Ping(ctx)

@@ -2,7 +2,6 @@ package integrationtest
 
 import (
 	"context"
-	"crypto/tls"
 	"github.com/testcontainers/testcontainers-go"
 
 	"github.com/redis/go-redis/v9"
@@ -58,21 +57,20 @@ func (rd *RedisDependency) Start(ctx context.Context) error {
 
 	rd.container = c
 
-	addr, err := c.Endpoint(ctx, "")
+	url, err := c.ConnectionString(ctx)
 	if err != nil {
 		return err
 	}
 
+	options, err := redis.ParseURL(url)
+	if err != nil {
+		return err
+	}
 	rd.env = map[string]string{
-		"REDIS_ADDRESS": addr,
+		"REDIS_ADDRESS": options.Addr,
 	}
 
-	rd.client = redis.NewClient(&redis.Options{
-		Addr: addr,
-		TLSConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
-	})
+	rd.client = redis.NewClient(options)
 
 	return nil
 }

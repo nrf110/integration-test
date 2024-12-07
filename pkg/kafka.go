@@ -9,7 +9,6 @@ import (
 	"strings"
 )
 
-// const defaultKafkaImage = "apache/kafka-native:3.8.0"
 const defaultKafkaImage = "confluentinc/confluent-local:7.5.0"
 
 type KafkaDependency struct {

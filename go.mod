@@ -3,8 +3,6 @@ module github.com/nrf110/integration-test
 go 1.23.0
 
 require (
-	github.com/docker/docker v27.3.1+incompatible
-	github.com/docker/go-connections v0.5.0
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/onsi/ginkgo/v2 v2.21.0
 	github.com/onsi/gomega v1.35.0
@@ -32,6 +30,8 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/distribution/reference v0.6.0 // indirect
+	github.com/docker/docker v27.3.1+incompatible // indirect
+	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect

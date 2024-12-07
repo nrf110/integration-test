@@ -8,7 +8,7 @@ import (
 )
 
 var _ = Describe("RedisDependency", func() {
-	It("connect", func(ctx SpecContext) {
+	It("can connect", func(ctx SpecContext) {
 		r := integrationtest.NewRedisDependency()
 		Expect(r.Start(ctx)).To(BeNil())
 		defer func() {

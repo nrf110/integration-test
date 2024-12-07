@@ -8,7 +8,7 @@ import (
 )
 
 var _ = Describe("PostgresDependency", func() {
-	It("connect", func(ctx SpecContext) {
+	It("can connect", func(ctx SpecContext) {
 		pg := integrationtest.NewPostgresDependency(&integrationtest.PostgresConfig{
 			Database: "postgres",
 			User:     "postgres",

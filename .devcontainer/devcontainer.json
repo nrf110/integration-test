@@ -2,7 +2,7 @@
   "name": "integration-test",
   "dockerFile": "Dockerfile",
   "features": {
-    
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
   "capAdd": ["SYS_PTRACE"],

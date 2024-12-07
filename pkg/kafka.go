@@ -2,14 +2,14 @@ package integrationtest
 
 import (
 	"context"
+	"github.com/nrf110/integration-test/pkg/kafka"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/kafka"
 	"github.com/twmb/franz-go/pkg/kadm"
 	"github.com/twmb/franz-go/pkg/kgo"
 	"strings"
 )
 
-const defaultKafkaImage = "confluentinc/confluent-local:7.5.0"
+const defaultKafkaImage = "apache/kafka-native:3.8.0"
 
 type KafkaDependency struct {
 	Dependency

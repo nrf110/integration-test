@@ -7,12 +7,12 @@ import (
 )
 
 type TestSystem struct {
-	env        map[string]string
-	deps       []Dependency
-	OpenSearch *OpenSearchDependency
-	Redis      *RedisDependency
-	Postgres   *PostgresDependency
-	PubSub     *PubSubDependency
+	env           map[string]string
+	deps          []Dependency
+	Elasticsearch *ElasticsearchDependency
+	Redis         *RedisDependency
+	Postgres      *PostgresDependency
+	PubSub        *PubSubDependency
 }
 
 type Option func(s *TestSystem) error
@@ -35,10 +35,10 @@ func WithDependency(dep Dependency) Option {
 	}
 }
 
-func WithOpenSearch(opts ...OpenSearchDependencyOpt) Option {
+func WithElasticsearch(opts ...ElasticearchDependencyOpt) Option {
 	return func(s *TestSystem) error {
-		s.OpenSearch = NewOpenSearchDependency(opts...)
-		return WithDependency(s.OpenSearch)(s)
+		s.Elasticsearch = NewElasticsearchDependency(opts...)
+		return WithDependency(s.Elasticsearch)(s)
 	}
 }
 

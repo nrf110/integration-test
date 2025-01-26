@@ -1,23 +1,23 @@
 package integrationtest_test
 
 import (
+	"github.com/elastic/go-elasticsearch/v8"
 	integrationtest "github.com/nrf110/integration-test/pkg"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
-	"github.com/opensearch-project/opensearch-go/v2"
 )
 
-var _ = Describe("OpenSearchDependency", func() {
+var _ = Describe("ElasticsearchDependency", func() {
 	It("can connect", func(ctx SpecContext) {
-		es := integrationtest.NewOpenSearchDependency()
+		es := integrationtest.NewElasticsearchDependency()
 		Expect(es.Start(ctx)).To(BeNil())
 		defer func() {
 			es.Stop(ctx)
 		}()
 
-		client := es.Client().(*opensearch.Client)
-		res, err := client.Indices.Create("test")
+		client := es.Client().(*elasticsearch.TypedClient)
+		res, err := client.API.Indices.Create("test").Do(ctx)
 		Expect(err).To(BeNil())
-		Expect(res.StatusCode).To(Equal(200))
+		Expect(res.Acknowledged).To(BeTrue())
 	})
 })

@@ -46,8 +46,8 @@ func WithElasticsearchContainerOpts(opts ...testcontainers.ContainerCustomizer) 
 	}
 }
 
-func (osd *ElasticsearchDependency) Start(ctx context.Context) error {
-	c, err := container.Run(ctx, osd.image)
+func (es *ElasticsearchDependency) Start(ctx context.Context) error {
+	c, err := container.Run(ctx, es.image)
 	if err != nil {
 		return err
 	}
@@ -57,9 +57,9 @@ func (osd *ElasticsearchDependency) Start(ctx context.Context) error {
 		return err
 	}
 
-	osd.container = c
+	es.container = c
 
-	osd.env = map[string]string{
+	es.env = map[string]string{
 		"ELASTICSEARCH_ENDPOINT": c.Settings.Address,
 		"ELASTICSEARCH_USERNAME": c.Settings.Username,
 		"ELASTICSEARCH_PASSWORD": c.Settings.Password,
@@ -81,22 +81,22 @@ func (osd *ElasticsearchDependency) Start(ctx context.Context) error {
 		return err
 	}
 
-	osd.client = client
+	es.client = client
 
 	return nil
 }
 
-func (osd *ElasticsearchDependency) Client() any {
-	return osd.client
+func (es *ElasticsearchDependency) Client() any {
+	return es.client
 }
 
-func (osd *ElasticsearchDependency) Env() map[string]string {
-	return osd.env
+func (es *ElasticsearchDependency) Env() map[string]string {
+	return es.env
 }
 
-func (osd *ElasticsearchDependency) Stop(ctx context.Context) error {
-	if osd.container != nil {
-		return osd.container.Terminate(ctx)
+func (es *ElasticsearchDependency) Stop(ctx context.Context) error {
+	if es.container != nil {
+		return es.container.Terminate(ctx)
 	}
 	return nil
 }

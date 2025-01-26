@@ -5,13 +5,27 @@ import (
 	"context"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/modules/gcloud"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"google.golang.org/api/option"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"log"
+	"time"
 )
 
 const defaultPubSubImage = "gcr.io/google.com/cloudsdktool/google-cloud-cli:stable"
+
+var defaultPubSubContainerOpts = []testcontainers.ContainerCustomizer{
+	testcontainers.WithEnv(map[string]string{
+		"APT_PACKAGES": "curl python3-crcmod lsb-release gnupg bash apt-utils",
+		"COMPONENTS":   "google-cloud-cli-pubsub-emulator",
+	}),
+	testcontainers.CustomizeRequest(testcontainers.GenericContainerRequest{
+		ContainerRequest: testcontainers.ContainerRequest{
+			WaitingFor: wait.ForLog("started").WithStartupTimeout(2 * time.Minute),
+		},
+	}),
+}
 
 type PubSubDependency struct {
 	Dependency
@@ -23,17 +37,10 @@ type PubSubDependency struct {
 	client        *pubsub.Client
 }
 
-var defaultContainerOpts = []testcontainers.ContainerCustomizer{
-	testcontainers.WithEnv(map[string]string{
-		"APT_PACKAGES": "curl python3-crcmod lsb-release gnupg bash",
-		"COMPONENTS":   "google-cloud-cli-pubsub-emulator",
-	}),
-}
-
 func NewPubSubDependency(opts ...testcontainers.ContainerCustomizer) *PubSubDependency {
 	dep := &PubSubDependency{
 		image:         defaultPubSubImage,
-		containerOpts: append(defaultContainerOpts, opts...),
+		containerOpts: append(defaultPubSubContainerOpts, opts...),
 	}
 
 	return dep

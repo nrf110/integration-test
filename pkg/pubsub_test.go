@@ -3,18 +3,18 @@ package integrationtest_test
 import (
 	"cloud.google.com/go/pubsub"
 	"context"
-	integrationtest "github.com/nrf110/integration-test/pkg"
+	integrationtest "github.com/nrf110/integration-test/pkg/pubsub"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 	"github.com/testcontainers/testcontainers-go/modules/gcloud"
 )
 
-var _ = Describe("PubSubDependency", func() {
+var _ = Describe("Dependency", func() {
 	It("should publish and consume", func(ctx SpecContext) {
 		topicName := "testtopic"
 		subscriptionID := "testsubscription"
 
-		pub := integrationtest.NewPubSubDependency(
+		pub := integrationtest.NewDependency(
 			gcloud.WithProjectID("test"))
 
 		err := pub.Start(ctx)

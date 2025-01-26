@@ -2,14 +2,14 @@ package integrationtest_test
 
 import (
 	"github.com/jackc/pgx/v5"
-	integrationtest "github.com/nrf110/integration-test/pkg"
+	integrationtest "github.com/nrf110/integration-test/pkg/postgres"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("PostgresDependency", func() {
+var _ = Describe("Dependency", func() {
 	It("can connect", func(ctx SpecContext) {
-		pg := integrationtest.NewPostgresDependency(&integrationtest.PostgresConfig{
+		pg := integrationtest.NewDependency(&integrationtest.Config{
 			Database: "postgres",
 			User:     "postgres",
 			Password: "postgres",

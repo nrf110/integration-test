@@ -1,4 +1,4 @@
-package integrationtest
+package pubsub
 
 import (
 	"cloud.google.com/go/pubsub"
@@ -27,9 +27,7 @@ var defaultPubSubContainerOpts = []testcontainers.ContainerCustomizer{
 	}),
 }
 
-type PubSubDependency struct {
-	Dependency
-
+type Dependency struct {
 	image         string
 	containerOpts []testcontainers.ContainerCustomizer
 	container     *gcloud.GCloudContainer
@@ -37,8 +35,8 @@ type PubSubDependency struct {
 	client        *pubsub.Client
 }
 
-func NewPubSubDependency(opts ...testcontainers.ContainerCustomizer) *PubSubDependency {
-	dep := &PubSubDependency{
+func NewDependency(opts ...testcontainers.ContainerCustomizer) *Dependency {
+	dep := &Dependency{
 		image:         defaultPubSubImage,
 		containerOpts: append(defaultPubSubContainerOpts, opts...),
 	}
@@ -46,14 +44,14 @@ func NewPubSubDependency(opts ...testcontainers.ContainerCustomizer) *PubSubDepe
 	return dep
 }
 
-func (pub *PubSubDependency) Start(ctx context.Context) error {
-	container, err := gcloud.RunPubsub(ctx, pub.image, pub.containerOpts...)
+func (dep *Dependency) Start(ctx context.Context) error {
+	container, err := gcloud.RunPubsub(ctx, dep.image, dep.containerOpts...)
 	if err != nil {
 		return err
 	}
-	pub.container = container
+	dep.container = container
 
-	conn, err := grpc.NewClient(pub.container.URI, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(dep.container.URI, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return err
 	}
@@ -65,25 +63,25 @@ func (pub *PubSubDependency) Start(ctx context.Context) error {
 		return err
 	}
 
-	pub.client = client
-	pub.env = map[string]string{
+	dep.client = client
+	dep.env = map[string]string{
 		"GOOGLE_CLOUD_PROJECT": projectID,
 	}
 
 	return nil
 }
 
-func (pub *PubSubDependency) Client() any {
-	return pub.client
+func (dep *Dependency) Client() any {
+	return dep.client
 }
 
-func (pub *PubSubDependency) Env() map[string]string {
-	return pub.env
+func (dep *Dependency) Env() map[string]string {
+	return dep.env
 }
 
-func (pub *PubSubDependency) Stop(ctx context.Context) error {
-	if pub.container != nil {
-		err := pub.container.Terminate(ctx)
+func (dep *Dependency) Stop(ctx context.Context) error {
+	if dep.container != nil {
+		err := dep.container.Terminate(ctx)
 		if err != nil {
 			log.Fatalf("failed to stop pubsub container: %v", err)
 		}

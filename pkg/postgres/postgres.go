@@ -1,4 +1,4 @@
-package integrationtest
+package postgres
 
 import (
 	"context"
@@ -13,16 +13,14 @@ import (
 
 const defaultPostgresImage = "postgres:16"
 
-type PostgresConfig struct {
+type Config struct {
 	User     string
 	Password string
 	Database string
 }
 
-type PostgresDependency struct {
-	Dependency
-
-	config        *PostgresConfig
+type Dependency struct {
+	config        *Config
 	image         string
 	containerOpts []testcontainers.ContainerCustomizer
 	container     *container.PostgresContainer
@@ -30,8 +28,8 @@ type PostgresDependency struct {
 	env           map[string]string
 }
 
-func NewPostgresDependency(config *PostgresConfig, opts ...PostgresDependencyOpt) *PostgresDependency {
-	dep := &PostgresDependency{
+func NewDependency(config *Config, opts ...DependencyOpt) *Dependency {
+	dep := &Dependency{
 		config: config,
 		image:  defaultPostgresImage,
 	}
@@ -41,25 +39,25 @@ func NewPostgresDependency(config *PostgresConfig, opts ...PostgresDependencyOpt
 	return dep
 }
 
-type PostgresDependencyOpt func(*PostgresDependency)
+type DependencyOpt func(*Dependency)
 
-func WithPostgresImage(image string) PostgresDependencyOpt {
-	return func(dep *PostgresDependency) {
+func WithImage(image string) DependencyOpt {
+	return func(dep *Dependency) {
 		dep.image = image
 	}
 }
 
-func WithPostgresContainerOpts(opts ...testcontainers.ContainerCustomizer) PostgresDependencyOpt {
-	return func(d *PostgresDependency) {
+func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
+	return func(d *Dependency) {
 		d.containerOpts = opts
 	}
 }
 
-func (pg *PostgresDependency) Start(ctx context.Context) error {
-	c, err := container.Run(ctx, pg.image,
-		container.WithDatabase(pg.config.Database),
-		container.WithUsername(pg.config.User),
-		container.WithPassword(pg.config.Password),
+func (dep *Dependency) Start(ctx context.Context) error {
+	c, err := container.Run(ctx, dep.image,
+		container.WithDatabase(dep.config.Database),
+		container.WithUsername(dep.config.User),
+		container.WithPassword(dep.config.Password),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).
@@ -75,7 +73,7 @@ func (pg *PostgresDependency) Start(ctx context.Context) error {
 		return err
 	}
 
-	pg.container = c
+	dep.container = c
 
 	connectionString, err := c.ConnectionString(ctx)
 	if err != nil {
@@ -87,30 +85,30 @@ func (pg *PostgresDependency) Start(ctx context.Context) error {
 		return err
 	}
 
-	pg.env = map[string]string{
+	dep.env = map[string]string{
 		"PG_HOST":     config.Host,
 		"PG_PORT":     strconv.Itoa(int(config.Port)),
-		"PG_DATABASE": pg.config.Database,
-		"PG_USER":     pg.config.User,
-		"PG_PASSWORD": pg.config.Password,
+		"PG_DATABASE": dep.config.Database,
+		"PG_USER":     dep.config.User,
+		"PG_PASSWORD": dep.config.Password,
 	}
 
-	pg.client, err = pgx.Connect(ctx, connectionString)
+	dep.client, err = pgx.Connect(ctx, connectionString)
 
 	return err
 }
 
-func (pg *PostgresDependency) Env() map[string]string {
-	return pg.env
+func (dep *Dependency) Env() map[string]string {
+	return dep.env
 }
 
-func (pg *PostgresDependency) Client() any {
-	return pg.client
+func (dep *Dependency) Client() any {
+	return dep.client
 }
 
-func (pg *PostgresDependency) Stop(ctx context.Context) error {
-	if pg.container != nil {
-		return pg.container.Terminate(ctx)
+func (dep *Dependency) Stop(ctx context.Context) error {
+	if dep.container != nil {
+		return dep.container.Terminate(ctx)
 	}
 	return nil
 }

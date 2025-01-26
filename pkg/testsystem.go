@@ -2,6 +2,10 @@ package integrationtest
 
 import (
 	"context"
+	"github.com/nrf110/integration-test/pkg/elasticsearch"
+	"github.com/nrf110/integration-test/pkg/postgres"
+	"github.com/nrf110/integration-test/pkg/pubsub"
+	"github.com/nrf110/integration-test/pkg/redis"
 	"github.com/testcontainers/testcontainers-go"
 	"maps"
 )
@@ -9,10 +13,10 @@ import (
 type TestSystem struct {
 	env           map[string]string
 	deps          []Dependency
-	Elasticsearch *ElasticsearchDependency
-	Redis         *RedisDependency
-	Postgres      *PostgresDependency
-	PubSub        *PubSubDependency
+	Elasticsearch *elasticsearch.Dependency
+	Redis         *redis.Dependency
+	Postgres      *postgres.Dependency
+	PubSub        *pubsub.Dependency
 }
 
 type Option func(s *TestSystem) error
@@ -35,30 +39,30 @@ func WithDependency(dep Dependency) Option {
 	}
 }
 
-func WithElasticsearch(opts ...ElasticearchDependencyOpt) Option {
+func WithElasticsearch(opts ...elasticsearch.DependencyOpt) Option {
 	return func(s *TestSystem) error {
-		s.Elasticsearch = NewElasticsearchDependency(opts...)
+		s.Elasticsearch = elasticsearch.NewDependency(opts...)
 		return WithDependency(s.Elasticsearch)(s)
 	}
 }
 
-func WithPostgres(config *PostgresConfig, opts ...PostgresDependencyOpt) Option {
+func WithPostgres(config *postgres.Config, opts ...postgres.DependencyOpt) Option {
 	return func(s *TestSystem) error {
-		s.Postgres = NewPostgresDependency(config, opts...)
+		s.Postgres = postgres.NewDependency(config, opts...)
 		return WithDependency(s.Postgres)(s)
 	}
 }
 
-func WithRedis(opts ...RedisDependencyOpt) Option {
+func WithRedis(opts ...redis.DependencyOpt) Option {
 	return func(s *TestSystem) error {
-		s.Redis = NewRedisDependency()
+		s.Redis = redis.NewDependency()
 		return WithDependency(s.Redis)(s)
 	}
 }
 
 func WithPubSub(opts ...testcontainers.ContainerCustomizer) Option {
 	return func(s *TestSystem) error {
-		s.PubSub = NewPubSubDependency(opts...)
+		s.PubSub = pubsub.NewDependency(opts...)
 		return WithDependency(s.PubSub)(s)
 	}
 }

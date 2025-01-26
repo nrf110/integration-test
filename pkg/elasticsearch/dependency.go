@@ -1,4 +1,4 @@
-package integrationtest
+package elasticsearch
 
 import (
 	"context"
@@ -6,24 +6,22 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"net/http"
 
-	"github.com/elastic/go-elasticsearch/v8"
+	es "github.com/elastic/go-elasticsearch/v8"
 	container "github.com/testcontainers/testcontainers-go/modules/elasticsearch"
 )
 
 const defaultElasticsearchImage = "docker.elastic.co/elasticsearch/elasticsearch:8.9.0"
 
-type ElasticsearchDependency struct {
-	Dependency
-
+type Dependency struct {
 	image         string
 	containerOpts []testcontainers.ContainerCustomizer
 	container     *container.ElasticsearchContainer
-	client        *elasticsearch.TypedClient
+	client        *es.TypedClient
 	env           map[string]string
 }
 
-func NewElasticsearchDependency(opts ...ElasticearchDependencyOpt) *ElasticsearchDependency {
-	dep := &ElasticsearchDependency{
+func NewDependency(opts ...DependencyOpt) *Dependency {
+	dep := &Dependency{
 		image: defaultElasticsearchImage,
 	}
 	for _, opt := range opts {
@@ -32,22 +30,22 @@ func NewElasticsearchDependency(opts ...ElasticearchDependencyOpt) *Elasticsearc
 	return dep
 }
 
-type ElasticearchDependencyOpt func(dependency *ElasticsearchDependency)
+type DependencyOpt func(dependency *Dependency)
 
-func WithElasticsearchImage(image string) ElasticearchDependencyOpt {
-	return func(dep *ElasticsearchDependency) {
+func WithImage(image string) DependencyOpt {
+	return func(dep *Dependency) {
 		dep.image = image
 	}
 }
 
-func WithElasticsearchContainerOpts(opts ...testcontainers.ContainerCustomizer) ElasticearchDependencyOpt {
-	return func(d *ElasticsearchDependency) {
+func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
+	return func(d *Dependency) {
 		d.containerOpts = opts
 	}
 }
 
-func (es *ElasticsearchDependency) Start(ctx context.Context) error {
-	c, err := container.Run(ctx, es.image)
+func (dep *Dependency) Start(ctx context.Context) error {
+	c, err := container.Run(ctx, dep.image)
 	if err != nil {
 		return err
 	}
@@ -57,16 +55,16 @@ func (es *ElasticsearchDependency) Start(ctx context.Context) error {
 		return err
 	}
 
-	es.container = c
+	dep.container = c
 
-	es.env = map[string]string{
+	dep.env = map[string]string{
 		"ELASTICSEARCH_ENDPOINT": c.Settings.Address,
 		"ELASTICSEARCH_USERNAME": c.Settings.Username,
 		"ELASTICSEARCH_PASSWORD": c.Settings.Password,
 		"ELASTICSEARCH_CA_CERT":  string(c.Settings.CACert),
 	}
 
-	client, err := elasticsearch.NewTypedClient(elasticsearch.Config{
+	client, err := es.NewTypedClient(es.Config{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
 				InsecureSkipVerify: true,
@@ -81,22 +79,22 @@ func (es *ElasticsearchDependency) Start(ctx context.Context) error {
 		return err
 	}
 
-	es.client = client
+	dep.client = client
 
 	return nil
 }
 
-func (es *ElasticsearchDependency) Client() any {
-	return es.client
+func (dep *Dependency) Client() any {
+	return dep.client
 }
 
-func (es *ElasticsearchDependency) Env() map[string]string {
-	return es.env
+func (dep *Dependency) Env() map[string]string {
+	return dep.env
 }
 
-func (es *ElasticsearchDependency) Stop(ctx context.Context) error {
-	if es.container != nil {
-		return es.container.Terminate(ctx)
+func (dep *Dependency) Stop(ctx context.Context) error {
+	if dep.container != nil {
+		return dep.container.Terminate(ctx)
 	}
 	return nil
 }

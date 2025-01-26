@@ -1,4 +1,4 @@
-package integrationtest
+package bigquery
 
 import (
 	"cloud.google.com/go/bigquery"
@@ -15,9 +15,7 @@ import (
 // TODO: Need a version of this image that works on Apple Silicon
 const defaultBiqQueryImage = "ghcr.io/goccy/bigquery-emulator:0.6.6"
 
-type BigQueryDependency struct {
-	Dependency
-
+type Dependency struct {
 	image         string
 	containerOpts []testcontainers.ContainerCustomizer
 	container     *gcloud.GCloudContainer
@@ -25,8 +23,8 @@ type BigQueryDependency struct {
 	env           map[string]string
 }
 
-func NewBigQueryDependency(opts ...BigQueryDependencyOpt) *BigQueryDependency {
-	dep := &BigQueryDependency{
+func NewDependency(opts ...DependencyOpt) *Dependency {
+	dep := &Dependency{
 		image: defaultBiqQueryImage,
 	}
 	for _, opt := range opts {
@@ -35,22 +33,22 @@ func NewBigQueryDependency(opts ...BigQueryDependencyOpt) *BigQueryDependency {
 	return dep
 }
 
-type BigQueryDependencyOpt func(dependency *BigQueryDependency)
+type DependencyOpt func(dependency *Dependency)
 
-func WithBigQueryImage(image string) BigQueryDependencyOpt {
-	return func(dep *BigQueryDependency) {
+func WithImage(image string) DependencyOpt {
+	return func(dep *Dependency) {
 		dep.image = image
 	}
 }
 
-func WithBigQueryContainerOpts(opts ...testcontainers.ContainerCustomizer) BigQueryDependencyOpt {
-	return func(d *BigQueryDependency) {
+func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
+	return func(d *Dependency) {
 		d.containerOpts = append(d.containerOpts, opts...)
 	}
 }
 
-func (bq *BigQueryDependency) Start(ctx context.Context) error {
-	c, err := gcloud.RunBigQuery(ctx, bq.image, bq.containerOpts...)
+func (dep *Dependency) Start(ctx context.Context) error {
+	c, err := gcloud.RunBigQuery(ctx, dep.image, dep.containerOpts...)
 	if err != nil {
 		return err
 	}
@@ -60,7 +58,7 @@ func (bq *BigQueryDependency) Start(ctx context.Context) error {
 		return err
 	}
 
-	bq.container = c
+	dep.container = c
 
 	projectID := c.Settings.ProjectID
 	opts := []option.ClientOption{
@@ -74,26 +72,26 @@ func (bq *BigQueryDependency) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	bq.client = client
+	dep.client = client
 
-	bq.env = map[string]string{
+	dep.env = map[string]string{
 		"GOOGLE_CLOUD_PROJECT": projectID,
 	}
 
 	return err
 }
 
-func (bq *BigQueryDependency) Env() map[string]string {
-	return bq.env
+func (dep *Dependency) Env() map[string]string {
+	return dep.env
 }
 
-func (bq *BigQueryDependency) Client() any {
-	return bq.client
+func (dep *Dependency) Client() any {
+	return dep.client
 }
 
-func (bq *BigQueryDependency) Stop(ctx context.Context) error {
-	if bq.container != nil {
-		return bq.container.Terminate(ctx)
+func (dep *Dependency) Stop(ctx context.Context) error {
+	if dep.container != nil {
+		return dep.container.Terminate(ctx)
 	}
 	return nil
 }

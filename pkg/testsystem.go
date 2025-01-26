@@ -2,6 +2,7 @@ package integrationtest
 
 import (
 	"context"
+	"github.com/testcontainers/testcontainers-go"
 	"maps"
 )
 
@@ -11,7 +12,7 @@ type TestSystem struct {
 	OpenSearch *OpenSearchDependency
 	Redis      *RedisDependency
 	Postgres   *PostgresDependency
-	Kafka      *KafkaDependency
+	PubSub     *PubSubDependency
 }
 
 type Option func(s *TestSystem) error
@@ -48,21 +49,17 @@ func WithPostgres(config *PostgresConfig, opts ...PostgresDependencyOpt) Option 
 	}
 }
 
-func WithKafka(opts ...KafkaDependencyOpt) Option {
-	return func(s *TestSystem) error {
-		if kafka, err := NewKafkaDependency(opts...); err != nil {
-			return err
-		} else {
-			s.Kafka = kafka
-			return WithDependency(s.Kafka)(s)
-		}
-	}
-}
-
 func WithRedis(opts ...RedisDependencyOpt) Option {
 	return func(s *TestSystem) error {
 		s.Redis = NewRedisDependency()
 		return WithDependency(s.Redis)(s)
+	}
+}
+
+func WithPubSub(opts ...testcontainers.ContainerCustomizer) Option {
+	return func(s *TestSystem) error {
+		s.PubSub = NewPubSubDependency(opts...)
+		return WithDependency(s.PubSub)(s)
 	}
 }
 

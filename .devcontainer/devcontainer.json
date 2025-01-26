@@ -1,27 +1,37 @@
 {
   "name": "integration-test",
   "dockerFile": "Dockerfile",
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
-  },
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "capAdd": ["SYS_PTRACE"],
+  "capAdd": [
+    "SYS_PTRACE"
+  ],
   "hostRequirements": {
     "memory": "4gb"
   },
   "initializeCommand": "${localWorkspaceFolder}/.devcontainer/gitconfig.sh",
-  "postCreateCommand": "go version",
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
   "customizations": {
+    "vscode": {
+      "extensions": [
+        "stevenchen.vscode-adr-manager",
+        "mads-hartmann.bash-ide-vscode",
+        "bufbuild.vscode-buf",
+        "ms-vscode.extension-test-runner",
+        "codezombiech.gitignore",
+        "ms-vscode.makefile-tools",
+        "joselitofilho.ginkgotestexplorer",
+        "jeppeandersen.vscode-kafka",
+        "gamunu.opentofu"
+      ]
+    },
     "jetbrains": {
       "backend": "GoLand",
       "plugins": [
         "com.github.intellij.ginkgo",
         "com.intellij.bigdatatools.core",
         "com.intellij.bigdatatools.kafka",
-        "com.intellij.ml.llm"
+        "org.intellij.plugins.hcl"
       ]
     }
   }
 }
-

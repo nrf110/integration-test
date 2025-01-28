@@ -13,7 +13,7 @@ import (
 )
 
 // TODO: Need a version of this image that works on Apple Silicon
-const defaultBiqQueryImage = "ghcr.io/goccy/bigquery-emulator:0.6.6"
+const defaultImage = "ghcr.io/goccy/bigquery-emulator:0.6.6"
 
 type Dependency struct {
 	image         string
@@ -25,7 +25,7 @@ type Dependency struct {
 
 func NewDependency(opts ...DependencyOpt) *Dependency {
 	dep := &Dependency{
-		image: defaultBiqQueryImage,
+		image: defaultImage,
 	}
 	for _, opt := range opts {
 		opt(dep)

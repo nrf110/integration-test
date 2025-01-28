@@ -13,7 +13,7 @@ import (
 	"time"
 )
 
-const defaultPubSubImage = "gcr.io/google.com/cloudsdktool/google-cloud-cli:stable"
+const defaultImage = "gcr.io/google.com/cloudsdktool/google-cloud-cli:stable"
 
 var defaultPubSubContainerOpts = []testcontainers.ContainerCustomizer{
 	testcontainers.WithEnv(map[string]string{
@@ -35,10 +35,28 @@ type Dependency struct {
 	client        *pubsub.Client
 }
 
-func NewDependency(opts ...testcontainers.ContainerCustomizer) *Dependency {
+type DependencyOpt func(d *Dependency)
+
+func WithImage(image string) DependencyOpt {
+	return func(dep *Dependency) {
+		dep.image = image
+	}
+}
+
+func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
+	return func(dep *Dependency) {
+		dep.containerOpts = append(dep.containerOpts, opts...)
+	}
+}
+
+func NewDependency(opts ...DependencyOpt) *Dependency {
 	dep := &Dependency{
-		image:         defaultPubSubImage,
-		containerOpts: append(defaultPubSubContainerOpts, opts...),
+		image:         defaultImage,
+		containerOpts: defaultPubSubContainerOpts,
+	}
+
+	for _, opt := range opts {
+		opt(dep)
 	}
 
 	return dep

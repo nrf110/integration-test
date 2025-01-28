@@ -10,7 +10,7 @@ import (
 	container "github.com/testcontainers/testcontainers-go/modules/elasticsearch"
 )
 
-const defaultElasticsearchImage = "docker.elastic.co/elasticsearch/elasticsearch:8.9.0"
+const defaultImage = "docker.elastic.co/elasticsearch/elasticsearch:8.9.0"
 
 type Dependency struct {
 	image         string
@@ -22,7 +22,7 @@ type Dependency struct {
 
 func NewDependency(opts ...DependencyOpt) *Dependency {
 	dep := &Dependency{
-		image: defaultElasticsearchImage,
+		image: defaultImage,
 	}
 	for _, opt := range opts {
 		opt(dep)
@@ -39,13 +39,13 @@ func WithImage(image string) DependencyOpt {
 }
 
 func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
-	return func(d *Dependency) {
-		d.containerOpts = opts
+	return func(dep *Dependency) {
+		dep.containerOpts = append(dep.containerOpts, opts...)
 	}
 }
 
 func (dep *Dependency) Start(ctx context.Context) error {
-	c, err := container.Run(ctx, dep.image)
+	c, err := container.Run(ctx, dep.image, dep.containerOpts...)
 	if err != nil {
 		return err
 	}

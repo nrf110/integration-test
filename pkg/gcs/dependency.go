@@ -1,34 +1,38 @@
-package redis
+package gcs
 
 import (
+	"cloud.google.com/go/storage"
 	"context"
+	"fmt"
 	"github.com/testcontainers/testcontainers-go"
-
-	"github.com/redis/go-redis/v9"
-	container "github.com/testcontainers/testcontainers-go/modules/redis"
+	"google.golang.org/api/option"
+	"log"
+	"strings"
 )
 
-const defaultRedisImage = "redis:7"
+const defaultImage = "fsouza/fake-gcs-server:1"
 
 type Dependency struct {
 	image         string
 	containerOpts []testcontainers.ContainerCustomizer
-	container     *container.RedisContainer
-	client        *redis.Client
+	container     *Container
+	client        *storage.Client
 	env           map[string]string
 }
 
 func NewDependency(opts ...DependencyOpt) *Dependency {
 	dep := &Dependency{
-		image: defaultRedisImage,
+		image: defaultImage,
 	}
+
 	for _, opt := range opts {
 		opt(dep)
 	}
+
 	return dep
 }
 
-type DependencyOpt func(d *Dependency)
+type DependencyOpt func(dependency *Dependency)
 
 func WithImage(image string) DependencyOpt {
 	return func(dep *Dependency) {
@@ -37,13 +41,13 @@ func WithImage(image string) DependencyOpt {
 }
 
 func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
-	return func(dep *Dependency) {
-		dep.containerOpts = append(dep.containerOpts, opts...)
+	return func(d *Dependency) {
+		d.containerOpts = append(d.containerOpts, opts...)
 	}
 }
 
 func (dep *Dependency) Start(ctx context.Context) error {
-	c, err := container.Run(ctx, dep.image)
+	c, err := Run(ctx, defaultImage, dep.containerOpts...)
 	if err != nil {
 		return err
 	}
@@ -55,20 +59,22 @@ func (dep *Dependency) Start(ctx context.Context) error {
 
 	dep.container = c
 
-	url, err := c.ConnectionString(ctx)
+	endpoint, err := c.Url(ctx)
 	if err != nil {
 		return err
 	}
 
-	options, err := redis.ParseURL(url)
-	if err != nil {
-		return err
-	}
 	dep.env = map[string]string{
-		"REDIS_ADDRESS": options.Addr,
+		"STORAGE_EMULATOR_HOST": strings.ReplaceAll(endpoint, "http://", ""),
 	}
 
-	dep.client = redis.NewClient(options)
+	client, err := storage.NewClient(ctx,
+		option.WithoutAuthentication(),
+		option.WithEndpoint(fmt.Sprintf("%s/storage/v1/", endpoint)))
+	if err != nil {
+		return err
+	}
+	dep.client = client
 
 	return nil
 }
@@ -83,7 +89,10 @@ func (dep *Dependency) Env() map[string]string {
 
 func (dep *Dependency) Stop(ctx context.Context) error {
 	if dep.container != nil {
-		return dep.container.Terminate(ctx)
+		err := dep.container.Terminate(ctx)
+		if err != nil {
+			log.Fatalf("failed to stop fake-gcs-server container: %v", err)
+		}
 	}
 	return nil
 }

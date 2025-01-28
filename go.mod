@@ -5,6 +5,7 @@ go 1.23.0
 require (
 	cloud.google.com/go/bigquery v1.59.1
 	cloud.google.com/go/pubsub v1.36.2
+	cloud.google.com/go/storage v1.38.0
 	github.com/elastic/go-elasticsearch/v8 v8.12.1
 	github.com/jackc/pgx/v5 v5.7.1
 	github.com/onsi/ginkgo/v2 v2.21.0

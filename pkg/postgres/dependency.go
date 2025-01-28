@@ -11,7 +11,7 @@ import (
 	container "github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
-const defaultPostgresImage = "postgres:16"
+const defaultImage = "postgres:16"
 
 type Config struct {
 	User     string
@@ -31,7 +31,7 @@ type Dependency struct {
 func NewDependency(config *Config, opts ...DependencyOpt) *Dependency {
 	dep := &Dependency{
 		config: config,
-		image:  defaultPostgresImage,
+		image:  defaultImage,
 	}
 	for _, opt := range opts {
 		opt(dep)
@@ -48,8 +48,8 @@ func WithImage(image string) DependencyOpt {
 }
 
 func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
-	return func(d *Dependency) {
-		d.containerOpts = opts
+	return func(dep *Dependency) {
+		dep.containerOpts = append(dep.containerOpts, opts...)
 	}
 }
 

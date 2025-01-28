@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Dependency", func() {
+var _ = Describe("elasticsearch.Dependency", func() {
 	It("can connect", func(ctx SpecContext) {
 		es := integrationtest.NewDependency()
 		Expect(es.Start(ctx)).To(BeNil())

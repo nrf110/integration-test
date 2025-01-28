@@ -15,7 +15,8 @@ var _ = Describe("Dependency", func() {
 		subscriptionID := "testsubscription"
 
 		pub := integrationtest.NewDependency(
-			gcloud.WithProjectID("test"))
+			integrationtest.WithContainerOpts(
+				gcloud.WithProjectID("test")))
 
 		err := pub.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())

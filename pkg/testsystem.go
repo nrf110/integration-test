@@ -6,7 +6,6 @@ import (
 	"github.com/nrf110/integration-test/pkg/postgres"
 	"github.com/nrf110/integration-test/pkg/pubsub"
 	"github.com/nrf110/integration-test/pkg/redis"
-	"github.com/testcontainers/testcontainers-go"
 	"maps"
 )
 
@@ -60,7 +59,7 @@ func WithRedis(opts ...redis.DependencyOpt) Option {
 	}
 }
 
-func WithPubSub(opts ...testcontainers.ContainerCustomizer) Option {
+func WithPubSub(opts ...pubsub.DependencyOpt) Option {
 	return func(s *TestSystem) error {
 		s.PubSub = pubsub.NewDependency(opts...)
 		return WithDependency(s.PubSub)(s)

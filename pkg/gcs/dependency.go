@@ -3,25 +3,12 @@ package gcs
 import (
 	"cloud.google.com/go/storage"
 	"context"
-	"fmt"
 	"github.com/testcontainers/testcontainers-go"
-	"google.golang.org/api/option"
 	"log"
-	"net/http"
-	"net/url"
 	"os"
 )
 
 const defaultImage = "fsouza/fake-gcs-server:1"
-
-type roundTripper url.URL
-
-func (rt roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Host = rt.Host
-	req.URL.Host = rt.Host
-	req.URL.Scheme = rt.Scheme
-	return http.DefaultTransport.RoundTrip(req)
-}
 
 type Dependency struct {
 	image         string
@@ -70,25 +57,19 @@ func (dep *Dependency) Start(ctx context.Context) error {
 
 	dep.container = c
 
-	endpoint, err := c.Url(ctx)
+	hostPort, err := c.HostAndPort(ctx)
 	if err != nil {
 		return err
 	}
 
 	dep.env = map[string]string{
-		"STORAGE_EMULATOR_HOST": fmt.Sprintf("%s/storage/v1/", endpoint),
+		"STORAGE_EMULATOR_HOST": hostPort,
 	}
 
-	os.Setenv("STORAGE_EMULATOR_HOST", dep.env["STORAGE_EMULATOR_HOST"])
+	os.Setenv("STORAGE_EMULATOR_HOST", hostPort)
 
-	//u, _ := url.Parse(endpoint)
-	//httpClient := &http.Client{
-	//	Transport: roundTripper(*u),
-	//}
-	client, err := storage.NewClient(ctx,
-		option.WithoutAuthentication(),
-		//option.WithHTTPClient(httpClient))
-		option.WithEndpoint(fmt.Sprintf("%s/storage/v1/", endpoint)))
+	client, err := storage.NewClient(ctx, storage.WithJSONReads())
+
 	if err != nil {
 		return err
 	}

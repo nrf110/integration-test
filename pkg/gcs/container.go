@@ -17,14 +17,15 @@ type Container struct {
 }
 
 func (c *Container) setExternalUrl(ctx context.Context) error {
-	url, err := c.Url(ctx)
+	hostPort, err := c.HostAndPort(ctx)
 	if err != nil {
 		return err
 	}
 
+	url := fmt.Sprintf("http://%s/", hostPort)
 	req, err := http.NewRequest(
 		http.MethodPut,
-		fmt.Sprintf("%s/_internal/config", url),
+		fmt.Sprintf("http://%s/_internal/config", hostPort),
 		strings.NewReader(`{"externalUrl":"`+url+`"}`),
 	)
 	if err != nil {
@@ -48,7 +49,7 @@ func (c *Container) setExternalUrl(ctx context.Context) error {
 	return nil
 }
 
-func (c *Container) Url(ctx context.Context) (string, error) {
+func (c *Container) HostAndPort(ctx context.Context) (string, error) {
 	host, err := c.Host(ctx)
 	if err != nil {
 		return "", err
@@ -59,7 +60,7 @@ func (c *Container) Url(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf("http://%s:%d", host, mappedPort.Int()), nil
+	return fmt.Sprintf("%s:%d", host, mappedPort.Int()), nil
 }
 
 func Run(ctx context.Context, image string, opts ...testcontainers.ContainerCustomizer) (*Container, error) {

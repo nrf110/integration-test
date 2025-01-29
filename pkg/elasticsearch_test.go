@@ -12,7 +12,7 @@ var _ = Describe("elasticsearch.Dependency", func() {
 		es := integrationtest.NewDependency()
 		Expect(es.Start(ctx)).To(BeNil())
 		defer func() {
-			es.Stop(ctx)
+			Expect(es.Stop(ctx)).ToNot(HaveOccurred())
 		}()
 
 		client := es.Client().(*elasticsearch.TypedClient)

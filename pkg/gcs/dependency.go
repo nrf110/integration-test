@@ -7,10 +7,21 @@ import (
 	"github.com/testcontainers/testcontainers-go"
 	"google.golang.org/api/option"
 	"log"
-	"strings"
+	"net/http"
+	"net/url"
+	"os"
 )
 
 const defaultImage = "fsouza/fake-gcs-server:1"
+
+type roundTripper url.URL
+
+func (rt roundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Host = rt.Host
+	req.URL.Host = rt.Host
+	req.URL.Scheme = rt.Scheme
+	return http.DefaultTransport.RoundTrip(req)
+}
 
 type Dependency struct {
 	image         string
@@ -65,11 +76,18 @@ func (dep *Dependency) Start(ctx context.Context) error {
 	}
 
 	dep.env = map[string]string{
-		"STORAGE_EMULATOR_HOST": strings.ReplaceAll(endpoint, "http://", ""),
+		"STORAGE_EMULATOR_HOST": fmt.Sprintf("%s/storage/v1/", endpoint),
 	}
 
+	os.Setenv("STORAGE_EMULATOR_HOST", dep.env["STORAGE_EMULATOR_HOST"])
+
+	//u, _ := url.Parse(endpoint)
+	//httpClient := &http.Client{
+	//	Transport: roundTripper(*u),
+	//}
 	client, err := storage.NewClient(ctx,
 		option.WithoutAuthentication(),
+		//option.WithHTTPClient(httpClient))
 		option.WithEndpoint(fmt.Sprintf("%s/storage/v1/", endpoint)))
 	if err != nil {
 		return err

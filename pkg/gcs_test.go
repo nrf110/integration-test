@@ -34,26 +34,35 @@ func generatePEM() []byte {
 }
 
 var _ = Describe("gcs.Dependency", func() {
-	It("can upload and download a file", func(ctx SpecContext) {
+	var (
+		dep    *gcs.Dependency
+		client *storage.Client
+		bucket *storage.BucketHandle
+	)
+
+	BeforeEach(func(ctx SpecContext) {
 		projectID := "test-project"
 
-		dep := gcs.NewDependency()
+		dep = gcs.NewDependency()
 		err := dep.Start(ctx)
 		Expect(err).NotTo(HaveOccurred())
-		defer func() {
-			err = dep.Stop(ctx)
-			Expect(err).NotTo(HaveOccurred())
-		}()
 
-		client := dep.Client().(*storage.Client)
+		client = dep.Client().(*storage.Client)
 
-		bucket := client.Bucket("test")
+		bucket = client.Bucket("test")
 		err = bucket.Create(ctx, projectID, &storage.BucketAttrs{})
 		Expect(err).NotTo(HaveOccurred())
+	})
 
+	AfterEach(func(ctx SpecContext) {
+		err := dep.Stop(ctx)
+		Expect(err).NotTo(HaveOccurred())
+	})
+
+	It("can upload and download a file", func(ctx SpecContext) {
 		object := bucket.Object("test.txt")
 		writer := object.NewWriter(ctx)
-		_, err = io.WriteString(writer, "Hello World")
+		_, err := io.WriteString(writer, "Hello World")
 		Expect(err).NotTo(HaveOccurred())
 		err = writer.Close()
 		Expect(err).NotTo(HaveOccurred())
@@ -67,22 +76,6 @@ var _ = Describe("gcs.Dependency", func() {
 	})
 
 	It("can upload and download from a signed url", func(ctx SpecContext) {
-		projectID := "test-project"
-
-		dep := gcs.NewDependency()
-		err := dep.Start(ctx)
-		Expect(err).NotTo(HaveOccurred())
-		defer func() {
-			err = dep.Stop(ctx)
-			Expect(err).NotTo(HaveOccurred())
-		}()
-
-		client := dep.Client().(*storage.Client)
-
-		bucket := client.Bucket("test")
-		err = bucket.Create(ctx, projectID, &storage.BucketAttrs{})
-		Expect(err).NotTo(HaveOccurred())
-
 		uploadUrl, err := bucket.SignedURL("test.txt", &storage.SignedURLOptions{
 			GoogleAccessID: "test",
 			Method:         "PUT",

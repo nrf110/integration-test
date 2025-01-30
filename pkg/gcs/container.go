@@ -26,7 +26,7 @@ func (c *Container) setExternalUrl(ctx context.Context) error {
 	req, err := http.NewRequest(
 		http.MethodPut,
 		fmt.Sprintf("http://%s/_internal/config", hostPort),
-		strings.NewReader(`{"externalUrl":"`+url+`"}`),
+		strings.NewReader(`{"externalUrl":"`+url+`","publicHost":"`+hostPort+`"}`),
 	)
 	if err != nil {
 		return err

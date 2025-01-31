@@ -3,19 +3,23 @@ package integrationtest
 import (
 	"context"
 	"github.com/nrf110/integration-test/pkg/elasticsearch"
+	"github.com/nrf110/integration-test/pkg/gcs"
 	"github.com/nrf110/integration-test/pkg/postgres"
 	"github.com/nrf110/integration-test/pkg/pubsub"
 	"github.com/nrf110/integration-test/pkg/redis"
+	"github.com/pressly/goose/v3"
 	"maps"
 )
 
 type TestSystem struct {
-	env           map[string]string
-	deps          []Dependency
-	Elasticsearch *elasticsearch.Dependency
-	Redis         *redis.Dependency
-	Postgres      *postgres.Dependency
-	PubSub        *pubsub.Dependency
+	env            map[string]string
+	deps           []Dependency
+	gooseProviders []GooseProviderFunc
+	Elasticsearch  *elasticsearch.Dependency
+	Redis          *redis.Dependency
+	Postgres       *postgres.Dependency
+	PubSub         *pubsub.Dependency
+	GCS            *gcs.Dependency
 }
 
 type Option func(s *TestSystem) error
@@ -66,12 +70,40 @@ func WithPubSub(opts ...pubsub.DependencyOpt) Option {
 	}
 }
 
+func WithGCS(opts ...gcs.DependencyOpt) Option {
+	return func(s *TestSystem) error {
+		s.GCS = gcs.NewDependency(opts...)
+		return WithDependency(s.GCS)(s)
+	}
+}
+
+type GooseProviderFunc func(s *TestSystem) (*goose.Provider, error)
+
+func WithGooseProviders(providers ...GooseProviderFunc) Option {
+	return func(s *TestSystem) error {
+		s.gooseProviders = providers
+		return nil
+	}
+}
+
 func (sys *TestSystem) Start(ctx context.Context) error {
 	for _, dep := range sys.deps {
 		if err := dep.Start(ctx); err != nil {
 			return err
 		}
 	}
+
+	for _, providerFunc := range sys.gooseProviders {
+		provider, err := providerFunc(sys)
+		if err != nil {
+			return err
+		}
+
+		if _, err = provider.Up(ctx); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -80,17 +112,6 @@ func (sys *TestSystem) Stop(ctx context.Context) error {
 		if err := dep.Stop(ctx); err != nil {
 			return err
 		}
-	}
-	return nil
-}
-
-func (sys *TestSystem) Run(ctx context.Context) (err error) {
-	if err = sys.Start(ctx); err != nil {
-		return err
-	}
-
-	if err = sys.Stop(ctx); err != nil {
-		return err
 	}
 	return nil
 }

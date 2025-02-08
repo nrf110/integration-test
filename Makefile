@@ -1,3 +1,5 @@
+export GOLANG_PROTOBUF_REGISTRATION_CONFLICT := warn
+
 .PHONY: clean
 clean:
 	rm -rf gen

@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Dependency", func() {
+var _ = Describe("postgres.Dependency", func() {
 	It("can connect", func(ctx SpecContext) {
 		pg := integrationtest.NewDependency(&integrationtest.Config{
 			Database: "postgres",

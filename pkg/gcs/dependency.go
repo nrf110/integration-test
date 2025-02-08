@@ -8,7 +8,7 @@ import (
 	"os"
 )
 
-const defaultImage = "fsouza/fake-gcs-server:1"
+const defaultImage = "fsouza/fake-gcs-server:1.52.1"
 
 type Dependency struct {
 	image         string

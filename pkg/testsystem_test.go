@@ -24,7 +24,8 @@ var _ = Describe("TestSystem", func() {
 				integrationtest.WithElasticsearch(),
 				integrationtest.WithPubSub(),
 				integrationtest.WithGCS(),
-				integrationtest.WithPostgres(pgConfig))
+				integrationtest.WithPostgres(pgConfig),
+				integrationtest.WithPermify())
 			Expect(err).NotTo(HaveOccurred())
 			defer func() {
 				err = system.Stop(ctx)

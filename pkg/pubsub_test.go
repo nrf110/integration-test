@@ -9,7 +9,7 @@ import (
 	"github.com/testcontainers/testcontainers-go/modules/gcloud"
 )
 
-var _ = Describe("Dependency", func() {
+var _ = Describe("pubsub.Dependency", func() {
 	It("should publish and consume", func(ctx SpecContext) {
 		topicName := "testtopic"
 		subscriptionID := "testsubscription"

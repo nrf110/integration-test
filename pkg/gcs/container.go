@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/testcontainers/testcontainers-go"
+	"github.com/testcontainers/testcontainers-go/wait"
 	"io"
 	"net/http"
 	"strings"
@@ -67,6 +68,7 @@ func Run(ctx context.Context, image string, opts ...testcontainers.ContainerCust
 	req := testcontainers.ContainerRequest{
 		Image:      image,
 		Entrypoint: []string{"/bin/fake-gcs-server", "-scheme", "http"},
+		WaitingFor: wait.ForLog("server started"),
 	}
 
 	genericContainerReq := testcontainers.GenericContainerRequest{

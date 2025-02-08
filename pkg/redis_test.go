@@ -7,7 +7,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-var _ = Describe("Dependency", func() {
+var _ = Describe("redis.Dependency", func() {
 	It("can connect", func(ctx SpecContext) {
 		r := integrationtest.NewDependency()
 		Expect(r.Start(ctx)).To(BeNil())

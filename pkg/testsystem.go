@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/nrf110/integration-test/pkg/elasticsearch"
 	"github.com/nrf110/integration-test/pkg/gcs"
+	"github.com/nrf110/integration-test/pkg/permify"
 	"github.com/nrf110/integration-test/pkg/postgres"
 	"github.com/nrf110/integration-test/pkg/pubsub"
 	"github.com/nrf110/integration-test/pkg/redis"
@@ -20,6 +21,7 @@ type TestSystem struct {
 	Postgres       *postgres.Dependency
 	PubSub         *pubsub.Dependency
 	GCS            *gcs.Dependency
+	Permify        *permify.Dependency
 }
 
 type Option func(s *TestSystem) error
@@ -74,6 +76,13 @@ func WithGCS(opts ...gcs.DependencyOpt) Option {
 	return func(s *TestSystem) error {
 		s.GCS = gcs.NewDependency(opts...)
 		return WithDependency(s.GCS)(s)
+	}
+}
+
+func WithPermify(opts ...permify.DependencyOpt) Option {
+	return func(s *TestSystem) error {
+		s.Permify = permify.NewDependency(opts...)
+		return WithDependency(s.Permify)(s)
 	}
 }
 

@@ -13,6 +13,7 @@ var _ = Describe("permify.Dependency", func() {
 
 	It("can check permissions", func(ctx SpecContext) {
 		r := integrationtest.NewDependency(
+			integrationtest.WithTenantId(tenantId),
 			integrationtest.WithSchema(`
 				entity user {
 					relation self @user
@@ -20,23 +21,15 @@ var _ = Describe("permify.Dependency", func() {
 					permission read = self
 				}
 			`),
-			integrationtest.WithData(&permifypayload.DataWriteRequest{
-				TenantId: tenantId,
-				Metadata: &permifypayload.DataWriteRequestMetadata{
-					SchemaVersion: "",
+			integrationtest.WithTuples(&permifypayload.Tuple{
+				Entity: &permifypayload.Entity{
+					Type: "user",
+					Id:   "1",
 				},
-				Tuples: []*permifypayload.Tuple{
-					{
-						Entity: &permifypayload.Entity{
-							Type: "user",
-							Id:   "1",
-						},
-						Relation: "self",
-						Subject: &permifypayload.Subject{
-							Type: "user",
-							Id:   "1",
-						},
-					},
+				Relation: "self",
+				Subject: &permifypayload.Subject{
+					Type: "user",
+					Id:   "1",
 				},
 			}))
 

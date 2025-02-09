@@ -25,8 +25,9 @@ type Dependency struct {
 	containerOpts []testcontainers.ContainerCustomizer
 	container     *permifytest.PermifyContainer
 	client        *permifygrpc.Client
+	tenantId      string
 	schema        string
-	data          []*permifypayload.DataWriteRequest
+	tuples        []*permifypayload.Tuple
 	env           map[string]string
 }
 
@@ -34,7 +35,8 @@ func NewDependency(opts ...DependencyOpt) *Dependency {
 	allOpts := append(defaultOpts, opts...)
 
 	dep := &Dependency{
-		image: defaultImage,
+		image:    defaultImage,
+		tenantId: "t1",
 	}
 	for _, opt := range allOpts {
 		opt(dep)
@@ -62,9 +64,15 @@ func WithSchema(schema string) DependencyOpt {
 	}
 }
 
-func WithData(data ...*permifypayload.DataWriteRequest) DependencyOpt {
+func WithTenantId(tenantId string) DependencyOpt {
 	return func(dep *Dependency) {
-		dep.data = append(dep.data, data...)
+		dep.tenantId = tenantId
+	}
+}
+
+func WithTuples(tuples ...*permifypayload.Tuple) DependencyOpt {
+	return func(dep *Dependency) {
+		dep.tuples = append(dep.tuples, tuples...)
 	}
 }
 
@@ -105,19 +113,23 @@ func (dep *Dependency) Start(ctx context.Context) error {
 	}
 
 	if dep.schema != "" {
-		_, err = client.Schema.Write(ctx, &permifypayload.SchemaWriteRequest{
-			TenantId: "t1",
+		schemaRes, err := client.Schema.Write(ctx, &permifypayload.SchemaWriteRequest{
+			TenantId: dep.tenantId,
 			Schema:   dep.schema,
 		})
 		if err != nil {
 			return err
 		}
 
-		for _, data := range dep.data {
-			_, err = client.Data.Write(ctx, data)
-			if err != nil {
-				return err
-			}
+		_, err = client.Data.Write(ctx, &permifypayload.DataWriteRequest{
+			TenantId: "t1",
+			Metadata: &permifypayload.DataWriteRequestMetadata{
+				SchemaVersion: schemaRes.SchemaVersion,
+			},
+			Tuples: dep.tuples,
+		})
+		if err != nil {
+			return err
 		}
 	}
 

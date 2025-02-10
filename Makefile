@@ -7,6 +7,7 @@ clean:
 
 .PHONY: update
 update:
+	docker pull ghcr.io/goccy/bigquery-emulator:0.6.6 --platform linux/amd64
 	go mod tidy
 
 .PHONY: test

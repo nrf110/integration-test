@@ -1,19 +1,20 @@
-package integrationtest_test
+package integrationtest
 
 import (
 	"cloud.google.com/go/storage"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
 	"github.com/nrf110/integration-test/pkg/gcs"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"net/http"
 	"os"
 	"strings"
+	"testing"
 	"time"
 )
 
@@ -33,49 +34,52 @@ func generatePEM() []byte {
 	return pem.EncodeToMemory(privateKeyPEM)
 }
 
-var _ = Describe("gcs.Dependency", func() {
-	var (
-		dep    *gcs.Dependency
-		client *storage.Client
-		bucket *storage.BucketHandle
-	)
+func TestGCSDependency(t *testing.T) {
+	init := func(t *testing.T) (context.Context, *storage.BucketHandle) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		t.Cleanup(cancel)
 
-	BeforeEach(func(ctx SpecContext) {
 		projectID := "test-project"
 
-		dep = gcs.NewDependency()
+		dep := gcs.NewDependency()
 		err := dep.Start(ctx)
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			assert.NoError(t, dep.Stop(ctx))
+		})
 
-		client = dep.Client().(*storage.Client)
+		client := dep.Client().(*storage.Client)
 
-		bucket = client.Bucket("test")
+		bucket := client.Bucket("test")
 		err = bucket.Create(ctx, projectID, &storage.BucketAttrs{})
-		Expect(err).NotTo(HaveOccurred())
-	})
+		assert.NoError(t, err)
 
-	AfterEach(func(ctx SpecContext) {
-		err := dep.Stop(ctx)
-		Expect(err).NotTo(HaveOccurred())
-	})
+		return ctx, bucket
+	}
 
-	It("can upload and download a file", func(ctx SpecContext) {
+	t.Run("can upload and download a file", func(t *testing.T) {
+		ctx, bucket := init(t)
+
 		object := bucket.Object("test.txt")
 		writer := object.NewWriter(ctx)
 		_, err := io.WriteString(writer, "Hello World")
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
 		err = writer.Close()
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
 
 		reader, err := object.NewReader(ctx)
-		Expect(err).NotTo(HaveOccurred())
-		defer reader.Close()
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			assert.NoError(t, reader.Close())
+		})
 		bytes, err := io.ReadAll(reader)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(string(bytes)).To(Equal("Hello World"))
+		assert.NoError(t, err)
+		assert.Equal(t, "Hello World", string(bytes))
 	})
 
-	It("can upload and download from a signed url", func(ctx SpecContext) {
+	t.Run("can upload and download from a signed url", func(t *testing.T) {
+		_, bucket := init(t)
+
 		uploadUrl, err := bucket.SignedURL("test.txt", &storage.SignedURLOptions{
 			GoogleAccessID: "test",
 			Method:         "PUT",
@@ -84,15 +88,15 @@ var _ = Describe("gcs.Dependency", func() {
 			Insecure:       true,
 			Scheme:         storage.SigningSchemeV4,
 		})
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
 
 		req, err := http.NewRequest("PUT", uploadUrl, strings.NewReader("Hello World"))
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
 
 		req.Header.Set("Content-Type", "application/octet-stream")
 		resp, err := http.DefaultClient.Do(req)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		assert.NoError(t, err)
+		assert.Equal(t, http.StatusOK, resp.StatusCode)
 
 		downloadUrl, err := bucket.SignedURL("test.txt", &storage.SignedURLOptions{
 			GoogleAccessID: "test",
@@ -102,15 +106,15 @@ var _ = Describe("gcs.Dependency", func() {
 			Insecure:       true,
 			Scheme:         storage.SigningSchemeV4,
 		})
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
 
 		req, err = http.NewRequest("GET", downloadUrl, nil)
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
 		resp, err = http.DefaultClient.Do(req)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(resp.StatusCode).To(Equal(http.StatusOK))
+		assert.NoError(t, err)
+		assert.Equal(t, resp.StatusCode, http.StatusOK)
 		bytes, err := io.ReadAll(resp.Body)
-		Expect(err).NotTo(HaveOccurred())
-		Expect(string(bytes)).To(Equal("Hello World"))
+		assert.NoError(t, err)
+		assert.Equal(t, "Hello World", string(bytes))
 	})
-})
+}

@@ -1,65 +1,68 @@
-package integrationtest_test
+package integrationtest
 
 import (
+	"context"
 	"github.com/jackc/pgx/v5"
 	"github.com/nrf110/integration-test/migrations"
-	integrationtest "github.com/nrf110/integration-test/pkg"
 	"github.com/nrf110/integration-test/pkg/postgres"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/pressly/goose/v3"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
-var _ = Describe("TestSystem", func() {
-	Describe("Start", func() {
-		pgConfig := &postgres.Config{
-			Database: "test",
-			User:     "test",
-			Password: "test",
-		}
+func TestTestSystem(t *testing.T) {
+	pgConfig := &postgres.Config{
+		Database: "test",
+		User:     "test",
+		Password: "test",
+	}
 
-		It("should start all dependencies", func(ctx SpecContext) {
-			system, err := integrationtest.NewTestSystem(
-				integrationtest.WithRedis(),
-				integrationtest.WithElasticsearch(),
-				integrationtest.WithPubSub(),
-				integrationtest.WithGCS(),
-				integrationtest.WithPostgres(pgConfig),
-				integrationtest.WithPermify())
-			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				err = system.Stop(ctx)
-				Expect(err).NotTo(HaveOccurred())
-			}()
+	t.Run("starts all dependencies", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		t.Cleanup(cancel)
 
-			err = system.Start(ctx)
-			Expect(err).NotTo(HaveOccurred())
+		system, err := NewTestSystem(
+			WithRedis(),
+			WithElasticsearch(),
+			WithPubSub(),
+			WithGCS(),
+			WithPostgres(pgConfig),
+			WithPermify())
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			assert.NoError(t, system.Stop(ctx))
 		})
 
-		It("should run migrations", func(ctx SpecContext) {
-			system, err := integrationtest.NewTestSystem(
-				integrationtest.WithPostgres(pgConfig),
-				integrationtest.WithGooseProviders(func(s *integrationtest.TestSystem) (*goose.Provider, error) {
-					conn := s.Postgres.Client().(*pgx.Conn)
-					return migrations.NewSQLProvider(conn)
-				}),
-			)
-			Expect(err).NotTo(HaveOccurred())
-			defer func() {
-				err = system.Stop(ctx)
-				Expect(err).NotTo(HaveOccurred())
-			}()
-
-			err = system.Start(ctx)
-			Expect(err).NotTo(HaveOccurred())
-
-			conn := system.Postgres.Client().(*pgx.Conn)
-
-			row := conn.QueryRow(ctx, "select count(*) from test;")
-			var count int
-			err = row.Scan(&count)
-			Expect(err).NotTo(HaveOccurred())
-			Expect(count).To(Equal(1))
-		})
+		err = system.Start(ctx)
+		assert.NoError(t, err)
 	})
-})
+
+	t.Run("runs migrations", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		t.Cleanup(cancel)
+
+		system, err := NewTestSystem(
+			WithPostgres(pgConfig),
+			WithGooseProviders(func(s *TestSystem) (*goose.Provider, error) {
+				conn := s.Postgres.Client().(*pgx.Conn)
+				return migrations.NewSQLProvider(conn)
+			}),
+		)
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			assert.NoError(t, system.Stop(ctx))
+		})
+
+		err = system.Start(ctx)
+		assert.NoError(t, err)
+
+		conn := system.Postgres.Client().(*pgx.Conn)
+
+		row := conn.QueryRow(ctx, "select count(*) from test;")
+		var count int
+		err = row.Scan(&count)
+		assert.NoError(t, err)
+		assert.Equal(t, 1, count)
+	})
+}

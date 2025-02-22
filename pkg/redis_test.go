@@ -1,22 +1,26 @@
-package integrationtest_test
+package integrationtest
 
 import (
+	"context"
 	integrationtest "github.com/nrf110/integration-test/pkg/redis"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 	"github.com/redis/go-redis/v9"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
-var _ = Describe("redis.Dependency", func() {
-	It("can connect", func(ctx SpecContext) {
+func TestRedisDependency(t *testing.T) {
+	t.Run("can connect", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		t.Cleanup(cancel)
 		r := integrationtest.NewDependency()
-		Expect(r.Start(ctx)).To(BeNil())
-		defer func() {
-			r.Stop(ctx)
-		}()
+		assert.NoError(t, r.Start(ctx))
+		t.Cleanup(func() {
+			assert.NoError(t, r.Stop(ctx))
+		})
 
 		client := r.Client().(*redis.Client)
 		status := client.Ping(ctx)
-		Expect(status.Err()).To(BeNil())
+		assert.NoError(t, status.Err())
 	})
-})
+}

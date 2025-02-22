@@ -2,16 +2,21 @@ package integrationtest
 
 import (
 	permifypayload "buf.build/gen/go/permifyco/permify/protocolbuffers/go/base/v1"
+	"context"
 	permifygrpc "github.com/Permify/permify-go/grpc"
 	integrationtest "github.com/nrf110/integration-test/pkg/permify"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
-var _ = Describe("permify.Dependency", func() {
+func TestPermifyDependency(t *testing.T) {
 	const tenantId = "t1"
 
-	It("can check permissions", func(ctx SpecContext) {
+	t.Run("can check permissions", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		t.Cleanup(cancel)
+
 		r := integrationtest.NewDependency(
 			integrationtest.WithTenantId(tenantId),
 			integrationtest.WithSchema(`
@@ -33,10 +38,10 @@ var _ = Describe("permify.Dependency", func() {
 				},
 			}))
 
-		Expect(r.Start(ctx)).To(BeNil())
-		defer func() {
-			r.Stop(ctx)
-		}()
+		assert.NoError(t, r.Start(ctx))
+		t.Cleanup(func() {
+			assert.NoError(t, r.Stop(ctx))
+		})
 
 		client := r.Client().(*permifygrpc.Client)
 
@@ -55,8 +60,8 @@ var _ = Describe("permify.Dependency", func() {
 				Depth: 10,
 			},
 		})
-		Expect(err).NotTo(HaveOccurred())
-		Expect(check1Res.GetCan()).To(Equal(permifypayload.CheckResult_CHECK_RESULT_ALLOWED))
+		assert.NoError(t, err)
+		assert.Equal(t, permifypayload.CheckResult_CHECK_RESULT_ALLOWED, check1Res.GetCan())
 
 		check2Res, err := client.Permission.Check(ctx, &permifypayload.PermissionCheckRequest{
 			TenantId: tenantId,
@@ -73,7 +78,7 @@ var _ = Describe("permify.Dependency", func() {
 				Depth: 10,
 			},
 		})
-		Expect(err).NotTo(HaveOccurred())
-		Expect(check2Res.GetCan()).To(Equal(permifypayload.CheckResult_CHECK_RESULT_DENIED))
+		assert.NoError(t, err)
+		assert.Equal(t, permifypayload.CheckResult_CHECK_RESULT_DENIED, check2Res.GetCan())
 	})
-})
+}

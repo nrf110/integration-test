@@ -12,4 +12,4 @@ update:
 
 .PHONY: test
 test: clean update
-	ginkgo ./...
+	go test ./pkg

@@ -1,25 +1,30 @@
-package integrationtest_test
+package integrationtest
 
 import (
+	"context"
 	"github.com/jackc/pgx/v5"
 	integrationtest "github.com/nrf110/integration-test/pkg/postgres"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
-var _ = Describe("postgres.Dependency", func() {
-	It("can connect", func(ctx SpecContext) {
+func TestPostgresDependency(t *testing.T) {
+	t.Run("can connect", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		t.Cleanup(cancel)
+
 		pg := integrationtest.NewDependency(&integrationtest.Config{
 			Database: "postgres",
 			User:     "postgres",
 			Password: "postgres",
 		})
 		err := pg.Start(ctx)
-		Expect(err).To(BeNil())
-		defer func() {
-			pg.Stop(ctx)
-		}()
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			assert.NoError(t, pg.Stop(ctx))
+		})
 		conn := pg.Client().(*pgx.Conn)
-		Expect(conn.Ping(ctx)).To(BeNil())
+		assert.NoError(t, conn.Ping(ctx))
 	})
-})
+}

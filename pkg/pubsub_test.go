@@ -1,43 +1,49 @@
-package integrationtest_test
+package integrationtest
 
 import (
 	"cloud.google.com/go/pubsub"
 	"context"
 	integrationtest "github.com/nrf110/integration-test/pkg/pubsub"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/gcloud"
+	"testing"
+	"time"
 )
 
-var _ = Describe("pubsub.Dependency", func() {
-	It("should publish and consume", func(ctx SpecContext) {
+func TestPubSubDependency(t *testing.T) {
+	t.Run("can publish and consume", func(t *testing.T) {
 		topicName := "testtopic"
 		subscriptionID := "testsubscription"
+
+		ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+		t.Cleanup(cancel)
 
 		pub := integrationtest.NewDependency(
 			integrationtest.WithContainerOpts(
 				gcloud.WithProjectID("test")))
 
 		err := pub.Start(ctx)
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
+
+		t.Cleanup(func() {
+			assert.NoError(t, pub.Stop(ctx))
+		})
 
 		client := pub.Client().(*pubsub.Client)
 		topic, err := client.CreateTopic(ctx, topicName)
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
 
 		subscription, err := client.CreateSubscription(ctx, subscriptionID, pubsub.SubscriptionConfig{
 			Topic: topic,
 		})
-		Expect(err).NotTo(HaveOccurred())
+		assert.NoError(t, err)
 
 		topic.Publish(ctx, &pubsub.Message{Data: []byte("test")})
 
 		subscription.Receive(ctx, func(ctx2 context.Context, m *pubsub.Message) {
 			text := string(m.Data)
-			Expect(text).To(Equal("test"))
-			pub.Client().(*pubsub.Client).Close()
+			assert.Equal(t, "test", text)
+			assert.NoError(t, pub.Client().(*pubsub.Client).Close())
 		})
-
-		pub.Stop(ctx)
 	})
-})
+}

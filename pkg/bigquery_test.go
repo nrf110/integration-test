@@ -1,11 +1,13 @@
-package integrationtest_test
+package integrationtest
 
 import (
 	"cloud.google.com/go/bigquery"
+	"context"
 	integrationtest "github.com/nrf110/integration-test/pkg/bigquery"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
 	"github.com/testcontainers/testcontainers-go/modules/gcloud"
+	"testing"
+	"time"
 )
 
 type Item struct {
@@ -13,21 +15,23 @@ type Item struct {
 	Name string `bigquery:"name"`
 }
 
-var _ = Describe("bigquery.Dependency", func() {
-	It("can connect", func(ctx SpecContext) {
+func TestBigQueryDependency(t *testing.T) {
+	t.Run("can connect", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		t.Cleanup(cancel)
 		bq := integrationtest.NewDependency(
 			integrationtest.WithContainerOpts(
 				gcloud.WithProjectID("test")))
 		err := bq.Start(ctx)
-		Expect(err).To(BeNil())
-		defer func() {
-			bq.Stop(ctx)
-		}()
+		assert.NoError(t, err)
+		t.Cleanup(func() {
+			assert.NoError(t, bq.Stop(ctx))
+		})
 		client := bq.Client().(*bigquery.Client)
 
 		ds := client.Dataset("test")
 		err = ds.Create(ctx, &bigquery.DatasetMetadata{})
-		Expect(err).To(BeNil())
+		assert.NoError(t, err)
 
 		table := ds.Table("test")
 		err = table.Create(ctx, &bigquery.TableMetadata{
@@ -44,27 +48,27 @@ var _ = Describe("bigquery.Dependency", func() {
 				},
 			},
 		})
-		Expect(err).To(BeNil())
+		assert.NoError(t, err)
 
 		items := []*Item{
 			{ID: 1, Name: "item1"},
 			{ID: 2, Name: "item2"},
 		}
 		err = table.Inserter().Put(ctx, items)
-		Expect(err).To(BeNil())
+		assert.NoError(t, err)
 
 		it, err := client.Query("select * from `test`.`test`.`test` order by id").Read(ctx)
-		Expect(err).ToNot(HaveOccurred())
+		assert.NoError(t, err)
 		var row Item
 
 		err = it.Next(&row)
-		Expect(err).To(BeNil())
-		Expect(row.ID).To(Equal(1))
-		Expect(row.Name).To(Equal("item1"))
+		assert.NoError(t, err)
+		assert.Equal(t, 1, row.ID)
+		assert.Equal(t, "item1", row.Name)
 
 		err = it.Next(&row)
-		Expect(err).To(BeNil())
-		Expect(row.ID).To(Equal(2))
-		Expect(row.Name).To(Equal("item2"))
+		assert.NoError(t, err)
+		assert.Equal(t, 2, row.ID)
+		assert.Equal(t, "item2", row.Name)
 	})
-})
+}

@@ -1,23 +1,28 @@
-package integrationtest_test
+package integrationtest
 
 import (
+	"context"
 	"github.com/elastic/go-elasticsearch/v8"
 	integrationtest "github.com/nrf110/integration-test/pkg/elasticsearch"
-	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
+	"github.com/stretchr/testify/assert"
+	"testing"
+	"time"
 )
 
-var _ = Describe("elasticsearch.Dependency", func() {
-	It("can connect", func(ctx SpecContext) {
+func TestElasticsearchDependency(t *testing.T) {
+	t.Run("can connect", func(t *testing.T) {
+		ctx, cancel := context.WithTimeout(context.Background(), 1*time.Minute)
+		t.Cleanup(cancel)
+
 		es := integrationtest.NewDependency()
-		Expect(es.Start(ctx)).To(BeNil())
-		defer func() {
-			Expect(es.Stop(ctx)).ToNot(HaveOccurred())
-		}()
+		assert.NoError(t, es.Start(ctx))
+		t.Cleanup(func() {
+			assert.NoError(t, es.Stop(ctx))
+		})
 
 		client := es.Client().(*elasticsearch.TypedClient)
 		res, err := client.API.Indices.Create("test").Do(ctx)
-		Expect(err).To(BeNil())
-		Expect(res.Acknowledged).To(BeTrue())
+		assert.NoError(t, err)
+		assert.True(t, res.Acknowledged)
 	})
-})
+}

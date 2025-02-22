@@ -22,7 +22,7 @@ var defaultPubSubContainerOpts = []testcontainers.ContainerCustomizer{
 	}),
 	testcontainers.CustomizeRequest(testcontainers.GenericContainerRequest{
 		ContainerRequest: testcontainers.ContainerRequest{
-			WaitingFor: wait.ForLog("started").WithStartupTimeout(2 * time.Minute),
+			WaitingFor: wait.ForLog("started").WithStartupTimeout(3 * time.Minute),
 		},
 	}),
 }
@@ -67,6 +67,7 @@ func (dep *Dependency) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	container.Start(ctx)
 	dep.container = container
 
 	conn, err := grpc.NewClient(dep.container.URI, grpc.WithTransportCredentials(insecure.NewCredentials()))
@@ -84,6 +85,7 @@ func (dep *Dependency) Start(ctx context.Context) error {
 	dep.client = client
 	dep.env = map[string]string{
 		"GOOGLE_CLOUD_PROJECT": projectID,
+		"PUBSUB_EMULATOR_HOST": container.URI,
 	}
 
 	return nil

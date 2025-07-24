@@ -11,7 +11,8 @@
   ],
   "remoteUser": "vscode",
   "remoteEnv": {
-    "CLAUDE_CODE_CONFIG_PATH": "/home/vscode/.claude"
+    "CLAUDE_CODE_CONFIG_PATH": "/home/vscode/.claude",
+    "GOLANG_PROTOBUF_REGISTRATION_CONFLICT": "warn"
   },
   "capAdd": [
     "SYS_PTRACE"

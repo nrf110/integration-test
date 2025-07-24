@@ -1,97 +1,98 @@
 package gcs
 
-// import (
-// 	"cloud.google.com/go/storage"
-// 	"context"
-// 	"github.com/testcontainers/testcontainers-go"
-// 	"log"
-// 	"os"
-// )
+import (
+	"context"
+	"log"
+	"os"
 
-// const defaultImage = "fsouza/fake-gcs-server:1.52.1"
+	"cloud.google.com/go/storage"
+	"github.com/testcontainers/testcontainers-go"
+)
 
-// type Dependency struct {
-// 	image         string
-// 	containerOpts []testcontainers.ContainerCustomizer
-// 	container     *Container
-// 	client        *storage.Client
-// 	env           map[string]string
-// }
+const defaultImage = "fsouza/fake-gcs-server:1.52.1"
 
-// func NewDependency(opts ...DependencyOpt) *Dependency {
-// 	dep := &Dependency{
-// 		image: defaultImage,
-// 	}
+type Dependency struct {
+	image         string
+	containerOpts []testcontainers.ContainerCustomizer
+	container     *Container
+	client        *storage.Client
+	env           map[string]string
+}
 
-// 	for _, opt := range opts {
-// 		opt(dep)
-// 	}
+func NewDependency(opts ...DependencyOpt) *Dependency {
+	dep := &Dependency{
+		image: defaultImage,
+	}
 
-// 	return dep
-// }
+	for _, opt := range opts {
+		opt(dep)
+	}
 
-// type DependencyOpt func(dependency *Dependency)
+	return dep
+}
 
-// func WithImage(image string) DependencyOpt {
-// 	return func(dep *Dependency) {
-// 		dep.image = image
-// 	}
-// }
+type DependencyOpt func(dependency *Dependency)
 
-// func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
-// 	return func(d *Dependency) {
-// 		d.containerOpts = append(d.containerOpts, opts...)
-// 	}
-// }
+func WithImage(image string) DependencyOpt {
+	return func(dep *Dependency) {
+		dep.image = image
+	}
+}
 
-// func (dep *Dependency) Start(ctx context.Context) error {
-// 	c, err := Run(ctx, defaultImage, dep.containerOpts...)
-// 	if err != nil {
-// 		return err
-// 	}
+func WithContainerOpts(opts ...testcontainers.ContainerCustomizer) DependencyOpt {
+	return func(d *Dependency) {
+		d.containerOpts = append(d.containerOpts, opts...)
+	}
+}
 
-// 	err = c.Start(ctx)
-// 	if err != nil {
-// 		return err
-// 	}
+func (dep *Dependency) Start(ctx context.Context) error {
+	c, err := Run(ctx, defaultImage, dep.containerOpts...)
+	if err != nil {
+		return err
+	}
 
-// 	dep.container = c
+	err = c.Start(ctx)
+	if err != nil {
+		return err
+	}
 
-// 	hostPort, err := c.HostAndPort(ctx)
-// 	if err != nil {
-// 		return err
-// 	}
+	dep.container = c
 
-// 	dep.env = map[string]string{
-// 		"STORAGE_EMULATOR_HOST": hostPort,
-// 	}
+	hostPort, err := c.HostAndPort(ctx)
+	if err != nil {
+		return err
+	}
 
-// 	os.Setenv("STORAGE_EMULATOR_HOST", hostPort)
+	dep.env = map[string]string{
+		"STORAGE_EMULATOR_HOST": hostPort,
+	}
 
-// 	client, err := storage.NewClient(ctx, storage.WithJSONReads())
+	os.Setenv("STORAGE_EMULATOR_HOST", hostPort)
 
-// 	if err != nil {
-// 		return err
-// 	}
-// 	dep.client = client
+	client, err := storage.NewClient(ctx, storage.WithJSONReads())
 
-// 	return nil
-// }
+	if err != nil {
+		return err
+	}
+	dep.client = client
 
-// func (dep *Dependency) Client() any {
-// 	return dep.client
-// }
+	return nil
+}
 
-// func (dep *Dependency) Env() map[string]string {
-// 	return dep.env
-// }
+func (dep *Dependency) Client() any {
+	return dep.client
+}
 
-// func (dep *Dependency) Stop(ctx context.Context) error {
-// 	if dep.container != nil {
-// 		err := dep.container.Terminate(ctx)
-// 		if err != nil {
-// 			log.Fatalf("failed to stop fake-gcs-server container: %v", err)
-// 		}
-// 	}
-// 	return nil
-// }
+func (dep *Dependency) Env() map[string]string {
+	return dep.env
+}
+
+func (dep *Dependency) Stop(ctx context.Context) error {
+	if dep.container != nil {
+		err := dep.container.Terminate(ctx)
+		if err != nil {
+			log.Fatalf("failed to stop fake-gcs-server container: %v", err)
+		}
+	}
+	return nil
+}

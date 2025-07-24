@@ -27,7 +27,7 @@ func TestTestSystem(t *testing.T) {
 			WithRedis(),
 			WithElasticsearch(),
 			WithPubSub(),
-			// WithGCS(),
+			WithGCS(),
 			WithPostgres(pgConfig),
 			WithPermify())
 		assert.NoError(t, err)

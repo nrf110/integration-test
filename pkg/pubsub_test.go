@@ -1,13 +1,14 @@
 package integrationtest
 
 import (
-	"cloud.google.com/go/pubsub"
 	"context"
-	integrationtest "github.com/nrf110/integration-test/pkg/pubsub"
-	"github.com/stretchr/testify/assert"
-	"github.com/testcontainers/testcontainers-go/modules/gcloud"
 	"testing"
 	"time"
+
+	"cloud.google.com/go/pubsub"
+	integrationtest "github.com/nrf110/integration-test/pkg/pubsub"
+	"github.com/stretchr/testify/assert"
+	tcpubsub "github.com/testcontainers/testcontainers-go/modules/gcloud/pubsub"
 )
 
 func TestPubSubDependency(t *testing.T) {
@@ -20,7 +21,7 @@ func TestPubSubDependency(t *testing.T) {
 
 		pub := integrationtest.NewDependency(
 			integrationtest.WithContainerOpts(
-				gcloud.WithProjectID("test")))
+				tcpubsub.WithProjectID("test")))
 
 		err := pub.Start(ctx)
 		assert.NoError(t, err)

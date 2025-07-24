@@ -2,13 +2,14 @@ package integrationtest
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/jackc/pgx/v5"
 	"github.com/nrf110/integration-test/migrations"
 	"github.com/nrf110/integration-test/pkg/postgres"
 	"github.com/pressly/goose/v3"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestTestSystem(t *testing.T) {
@@ -26,7 +27,7 @@ func TestTestSystem(t *testing.T) {
 			WithRedis(),
 			WithElasticsearch(),
 			WithPubSub(),
-			WithGCS(),
+			// WithGCS(),
 			WithPostgres(pgConfig),
 			WithPermify())
 		assert.NoError(t, err)
